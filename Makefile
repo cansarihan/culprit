@@ -5,7 +5,7 @@ DATE     ?= $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
 LDFLAGS  := -s -w -X main.version=$(VERSION) -X main.commit=$(COMMIT) -X main.date=$(DATE)
 GOFILES  := $(shell find . -name '*.go' -not -path './vendor/*')
 
-.PHONY: all build test race cover lint fmt vet tidy run demo demo-down docker clean samples
+.PHONY: all build test race cover lint fmt vet tidy run demo demo-down docker clean
 
 all: lint test build
 
@@ -35,13 +35,10 @@ vet:
 tidy:
 	go mod tidy
 
-samples:
-	@mkdir -p bin
-	go build -trimpath -o bin/sample-old ./deploy/sample/old
-	go build -trimpath -o bin/sample-new ./deploy/sample/new
 
-run: build samples
-	./bin/$(BINARY) serve -old bin/sample-old -new bin/sample-new
+run: build
+	@test -d .work/relay || ./bin/$(BINARY) demo .work/relay
+	./bin/$(BINARY) serve -repo .work/relay
 
 demo:
 	docker compose -f deploy/docker-compose.yml up --build -d

@@ -1,0 +1,13 @@
+# Builds a demo repository with hidden security fixes inside the container and
+# serves the panel over it.
+services:
+  culprit:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    image: culprit:demo
+    entrypoint: ["/bin/sh", "-c"]
+    command: ["culprit demo /home/culprit/relay && culprit serve -repo /home/culprit/relay -listen 0.0.0.0:8080"]
+    ports:
+      - "127.0.0.1:18190:8080"
+    restart: unless-stopped
