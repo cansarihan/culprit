@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 170" width="760" height="170" fill="none">
+  <line x1="40" y1="128" x2="720" y2="128" stroke="#CFD6DF" stroke-width="3" stroke-linecap="round"/>
+  <g fill="#8A95A6">
+    <circle cx="70" cy="128" r="5"/><circle cx="118" cy="128" r="5"/><circle cx="166" cy="128" r="5"/><circle cx="262" cy="128" r="5"/>
+    <circle cx="358" cy="128" r="5"/><circle cx="406" cy="128" r="5"/><circle cx="502" cy="128" r="5"/><circle cx="598" cy="128" r="5"/><circle cx="690" cy="128" r="5"/>
+  </g>
+  <circle cx="214" cy="128" r="13" fill="#F5D547"/><circle cx="214" cy="128" r="7" fill="#B3263E"/>
+  <circle cx="454" cy="128" r="13" fill="#F5D547"/><circle cx="454" cy="128" r="7" fill="#B3263E"/>
+  <circle cx="550" cy="128" r="8" fill="#2F7D8C"/>
+  <text x="40" y="82" font-family="Charter, 'Iowan Old Style', Georgia, serif" font-size="68" font-weight="700" fill="#1B2433">Culprit</text>
+  <text x="318" y="80" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="18" fill="#5B6678">finds the security fixes nobody announced</text>
+</svg>
