@@ -28,7 +28,7 @@ func demoServer(t *testing.T, token string) *httptest.Server {
 
 func getJSON(t *testing.T, url string, v any) int {
 	t.Helper()
-	res, err := http.Get(url)
+	res, err := http.Get(url) // #nosec G107 -- url is the httptest server under test
 	if err != nil {
 		t.Fatal(err)
 	}
