@@ -23,7 +23,7 @@ var pathRules = []pathRule{
 		regexp.MustCompile(`(?i)(pars|decod|unmarshal|lexer|scanner|reader|codec|archive|zip|tar)`)},
 	{define(Signal{ID: "path-boundary", Family: FamilyPath, Label: "request boundary", Weight: 8,
 		Description: "touches HTTP handlers, uploads, SQL or templates"}),
-		regexp.MustCompile(`(?i)(handler|upload|http|server|sql|query|template|render)`)},
+		regexp.MustCompile(`(?i)(handler|upload|http|serve|sql|query|template|render)`)},
 }
 
 // PathHits returns the path signals a commit's touched files trip.
@@ -31,7 +31,7 @@ func PathHits(files []patch.FileDiff) []Hit {
 	var hits []Hit
 	for _, rule := range pathRules {
 		for _, f := range files {
-			if isTestFile(f.Path) {
+			if isTestFile(f.Path) || f.New {
 				continue
 			}
 			if rule.re.MatchString(f.Path) {

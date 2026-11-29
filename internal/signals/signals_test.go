@@ -57,6 +57,20 @@ func TestDiffSwaps(t *testing.T) {
 	}
 }
 
+func TestDiffIgnoresNewFiles(t *testing.T) {
+	files := []patch.FileDiff{{Path: "api/upload.go", New: true, Added: []string{"if n > len(buf) {", "http.Error(w, msg, http.StatusBadRequest)"}}}
+	if len(DiffHits(files)) != 0 || len(PathHits(files)) != 0 {
+		t.Error("a file the commit created should not count as a fix")
+	}
+}
+
+func TestDiffReject(t *testing.T) {
+	files := []patch.FileDiff{{Path: "decode/frame.go", Added: []string{"\t\treturn nil, errShort"}, Removed: []string{"x"}}}
+	if !ids(DiffHits(files))["diff-reject"] {
+		t.Error("an added error return is a rejection path")
+	}
+}
+
 func TestDiffIgnoresTests(t *testing.T) {
 	files := []patch.FileDiff{{Path: "frame_test.go", Added: []string{"if n > len(buf) {"}}}
 	if len(DiffHits(files)) != 0 {

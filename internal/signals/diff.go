@@ -67,6 +67,9 @@ var diffRules = []diffRule{
 	{define(Signal{ID: "diff-timeout", Family: FamilyDiff, Label: "timeout or deadline", Weight: 14,
 		Description: "adds a timeout, deadline or cancellable context"}),
 		addedMatching(regexp.MustCompile(`context\.With(Timeout|Deadline)|Set(Read|Write)?Deadline|ReadHeaderTimeout|Timeout:\s`))},
+	{define(Signal{ID: "diff-reject", Family: FamilyDiff, Label: "new rejection path", Weight: 10,
+		Description: "adds an early error return or a 4xx response — input that used to pass is now refused"}),
+		addedMatching(regexp.MustCompile(`return (nil, )?err\w*\s*$|errors\.New\(|http\.Error\(|Status(BadRequest|Forbidden|Unauthorized|RequestEntityTooLarge|UnprocessableEntity)`))},
 	{define(Signal{ID: "diff-nilcheck", Family: FamilyDiff, Label: "new nil check", Weight: 10,
 		Description: "guards a value against nil before use"}),
 		addedMatching(regexp.MustCompile(`if [\w.\[\]]+ (==|!=) nil\b`))},
@@ -83,11 +86,13 @@ var diffRules = []diffRule{
 
 // DiffHits returns the diff signals a commit's changes trip, at most once per
 // signal, recording the first file and line that tripped it.
+// Files the commit created are skipped: a fix changes code that already
+// existed, while a new file is full of guards that were never missing.
 func DiffHits(files []patch.FileDiff) []Hit {
 	var hits []Hit
 	for _, rule := range diffRules {
 		for _, f := range files {
-			if isTestFile(f.Path) {
+			if isTestFile(f.Path) || f.New {
 				continue
 			}
 			if evidence, ok := rule.match(f); ok {
