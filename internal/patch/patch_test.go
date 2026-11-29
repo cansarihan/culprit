@@ -38,3 +38,13 @@ func TestParse(t *testing.T) {
 		t.Errorf("deleted file = %+v", files[1])
 	}
 }
+
+func TestParseMarksNewFiles(t *testing.T) {
+	files := Parse([]byte("diff --git a/n.go b/n.go\nnew file mode 100644\n--- /dev/null\n+++ b/n.go\n@@ -0,0 +1 @@\n+package n\n"))
+	if len(files) != 1 || !files[0].New || files[0].Path != "n.go" {
+		t.Fatalf("new file not marked: %+v", files)
+	}
+	if Parse([]byte(sample))[0].New {
+		t.Error("a modified file is not new")
+	}
+}

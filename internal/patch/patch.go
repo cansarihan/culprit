@@ -14,6 +14,7 @@ import (
 // FileDiff is what one commit changed in one file.
 type FileDiff struct {
 	Path    string   `json:"path"`
+	New     bool     `json:"new,omitempty"`
 	Added   []string `json:"added"`
 	Removed []string `json:"removed"`
 }
@@ -54,6 +55,10 @@ func Parse(data []byte) []FileDiff {
 			if p := strings.TrimPrefix(line, "+++ "); p != "/dev/null" {
 				current.Path = strings.TrimPrefix(p, "b/")
 			}
+		case strings.HasPrefix(line, "new file mode"):
+			current.New = true
+		case line == "--- /dev/null":
+			current.New = true
 		case strings.HasPrefix(line, "--- "):
 			continue
 		case strings.HasPrefix(line, "+"):
