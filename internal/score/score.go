@@ -73,11 +73,13 @@ func Assess(c gitlog.Commit, files []patch.FileDiff) Assessment {
 	return a
 }
 
+// band places a score: two independent strong signals reach likely, one
+// clear signal reaches possible.
 func band(score int) string {
 	switch {
-	case score >= 60:
+	case score >= 50:
 		return BandLikely
-	case score >= 30:
+	case score >= 25:
 		return BandPossible
 	default:
 		return BandUnlikely
