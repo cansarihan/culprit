@@ -37,6 +37,8 @@ func run() error {
 	switch os.Args[1] {
 	case "scan":
 		return runScan(args)
+	case "show":
+		return runShow(args)
 	case "version":
 		fmt.Printf("culprit %s (commit %s, built %s)\n", version, commit, date)
 		return nil
