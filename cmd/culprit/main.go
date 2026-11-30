@@ -39,6 +39,8 @@ func run() error {
 		return runScan(args)
 	case "show":
 		return runShow(args)
+	case "signals":
+		return runSignals(args)
 	case "version":
 		fmt.Printf("culprit %s (commit %s, built %s)\n", version, commit, date)
 		return nil
