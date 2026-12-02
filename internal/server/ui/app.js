@@ -267,9 +267,78 @@ function renderDiffs(files, hits) {
       `</div></article>`;
   }).join("");
 }
-function renderTimeline() {}
-function renderHotspots() {}
-function renderSignals() {}
+function weekKey(iso) {
+  const d = new Date(iso);
+  const t = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+  const offset = (new Date(t).getUTCDay() + 6) % 7;
+  return new Date(t - offset * 864e5).toISOString().slice(0, 10);
+}
+
+function renderTimeline() {
+  const svg = $("weeks");
+  svg.replaceChildren();
+  const weeks = report.timeline;
+  const W = svg.clientWidth || 900, H = 300, left = 34, bottom = 30, top = 22;
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  if (!weeks.length) return;
+  const max = Math.max(1, ...weeks.map((w) => w.commits));
+  const step = (W - left - 10) / weeks.length;
+  const bw = Math.max(4, Math.min(28, step * 0.62));
+  const y = (n) => H - bottom - (n / max) * (H - bottom - top);
+  for (let g = 0; g <= max; g += Math.max(1, Math.ceil(max / 4))) {
+    svg.append(el("line", { x1: left, x2: W - 6, y1: y(g), y2: y(g), stroke: "#dfe5ec" }));
+    const t = el("text", { x: left - 8, y: y(g) + 4, "text-anchor": "end", "font-size": 11, fill: "#5b6678" });
+    t.textContent = g; svg.append(t);
+  }
+  let lastMonth = "";
+  weeks.forEach((w, i) => {
+    const cx = left + step * i + step / 2, x0 = cx - bw / 2;
+    const other = w.commits - w.likely - w.possible;
+    let base = 0;
+    for (const [n, color] of [[w.likely, COLORS.likely], [w.possible, COLORS.possible], [other, "#b8c2cf"]]) {
+      if (!n) continue;
+      svg.append(el("rect", { x: x0, y: y(base + n), width: bw, height: y(base) - y(base + n), fill: color, rx: 3 }));
+      base += n;
+    }
+    const tip = el("title");
+    tip.textContent = `Week of ${day(w.start)}: ${plural(w.commits, "commit", "commits")}, ${w.silent} silent`;
+    const hit = el("rect", { x: cx - step / 2, y: top, width: step, height: H - bottom - top, fill: "transparent" });
+    hit.append(tip); svg.append(hit);
+    if (w.silent) svg.append(el("circle", { cx, cy: y(w.commits) - 10, r: 4.5, fill: "#b3263e", stroke: "#f5d547", "stroke-width": 2 }));
+    const month = new Date(w.start).toLocaleDateString(undefined, { month: "short", timeZone: "UTC" });
+    if (month !== lastMonth) {
+      const t = el("text", { x: cx, y: H - 10, "text-anchor": "middle", "font-size": 11, fill: "#5b6678" });
+      t.textContent = month; svg.append(t); lastMonth = month;
+    }
+  });
+  const silentWeeks = weeks.filter((w) => w.silent);
+  $("week-list").innerHTML = silentWeeks.length ? silentWeeks.map((w) => {
+    const key = w.start.slice(0, 10);
+    const commits = report.assessments.filter((a) => a.silent && weekKey(a.commit.when) === key);
+    return `<li><div class="d">Week of ${day(w.start)}</div>` +
+      commits.map((a) => `<a href="#/commit/${a.commit.hash}">${esc(a.commit.subject)}</a>`).join("") + `</li>`;
+  }).join("") : `<li class="empty">No week contains a silent fix.</li>`;
+}
+
+function renderHotspots() {
+  renderHotBars($("hot"), report.hotspots);
+  $("authors").innerHTML = report.authors.map((au) => `
+    <tr><td>${esc(au.name)}</td><td>${au.commits}</td><td>${au.flagged ? `<span class="tag silent">${au.flagged}</span>` : "0"}</td></tr>`).join("");
+}
+
+let catalog = null;
+async function renderSignals() {
+  if (!catalog) {
+    try { catalog = await api("/api/v1/signals"); } catch (err) { $("families").innerHTML = `<p class="empty">${esc(err.message)}</p>`; return; }
+  }
+  const names = { message: "What the message says", diff: "What the diff adds", path: "Which files it touches" };
+  $("families").innerHTML = Object.keys(names).map((fam) => `
+    <section class="panel"><h2>${names[fam]}</h2>` +
+    catalog.filter((s) => s.family === fam).map((s) => `
+      <div class="sig${s.announced ? " ann" : ""}"><div class="top"><span>${esc(s.label)}</span><b>+${s.weight}</b></div>
+      <p>${esc(s.description)}${s.announced ? ". Marks the fix as announced." : ""}</p></div>`).join("") +
+    `</section>`).join("");
+}
 
 async function init() {
   $("rescan").addEventListener("click", () => load(true));
@@ -286,7 +355,11 @@ async function init() {
   $("rows").addEventListener("click", openRow);
   $("rows").addEventListener("keydown", openRow);
   window.addEventListener("hashchange", route);
-  window.addEventListener("resize", () => { if (report && !$("page-overview").hidden) drawLineup(); });
+  window.addEventListener("resize", () => {
+    if (!report) return;
+    if (!$("page-overview").hidden) drawLineup();
+    if (!$("page-timeline").hidden) renderTimeline();
+  });
   try {
     const st = await api("/api/v1/status");
     $("build").textContent = `Culprit ${st.version} on ${st.platform}`;
