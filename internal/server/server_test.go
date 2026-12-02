@@ -78,3 +78,16 @@ func TestSignalsAndToken(t *testing.T) {
 		t.Errorf("signals = %d with %d entries", code, len(catalog))
 	}
 }
+
+func TestPanelIsNotCached(t *testing.T) {
+	srv := httptest.NewServer(New(Options{Repo: t.TempDir(), UI: true}, BuildInfo{}).Handler())
+	defer srv.Close()
+	res, err := http.Get(srv.URL + "/app.js")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = res.Body.Close()
+	if res.StatusCode != http.StatusOK || res.Header.Get("Cache-Control") != "no-cache" {
+		t.Errorf("app.js: status %d, cache-control %q", res.StatusCode, res.Header.Get("Cache-Control"))
+	}
+}
