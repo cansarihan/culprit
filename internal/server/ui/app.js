@@ -181,7 +181,26 @@ function renderHotBars(ul, spots) {
 }
 
 /* placeholders filled in by later views */
-function renderCommits() {}
+let filter = { band: "flagged", q: "" };
+
+function renderCommits() {
+  const q = filter.q.trim().toLowerCase();
+  const rows = report.assessments.filter((a) => {
+    if (filter.band === "flagged" && a.band === "unlikely") return false;
+    if (filter.band === "silent" && !a.silent) return false;
+    if (!q) return true;
+    return [a.commit.subject, a.commit.author, a.commit.hash].some((v) => v.toLowerCase().includes(q));
+  });
+  $("rows").innerHTML = rows.length ? rows.map((a) => `
+    <tr data-hash="${a.commit.hash}" tabindex="0">
+      <td><span class="meter ${a.band}">${a.score}<span><b style="width:${a.score}%"></b></span></span></td>
+      <td><span class="subj">${esc(a.commit.subject)}</span>${kind(a) ? `<span class="tag ${kind(a)}">${kind(a)}</span>` : ""}
+        <div class="hashcell">${a.commit.hash.slice(0, 10)}</div></td>
+      <td><div class="ev">${a.hits.map((h) => `<span>${esc(h.signal.label)}</span>`).join("") || '<span>none</span>'}</div></td>
+      <td>${esc(a.commit.author)}</td>
+      <td>${day(a.commit.when)}</td>
+    </tr>`).join("") : `<tr><td colspan="5" class="empty">${filter.q ? "No commit matches that search." : "No commit fits this filter. Try All."}</td></tr>`;
+}
 function renderCommit() {}
 function renderTimeline() {}
 function renderHotspots() {}
@@ -189,6 +208,18 @@ function renderSignals() {}
 
 async function init() {
   $("rescan").addEventListener("click", () => load(true));
+  $("q").addEventListener("input", (e) => { filter.q = e.target.value; if (report) renderCommits(); });
+  document.querySelectorAll(".seg button").forEach((b) => b.addEventListener("click", () => {
+    filter.band = b.dataset.band;
+    document.querySelectorAll(".seg button").forEach((x) => x.classList.toggle("on", x === b));
+    if (report) renderCommits();
+  }));
+  const openRow = (e) => {
+    const tr = e.target.closest("tr[data-hash]");
+    if (tr && (e.type === "click" || e.key === "Enter")) location.hash = "#/commit/" + tr.dataset.hash;
+  };
+  $("rows").addEventListener("click", openRow);
+  $("rows").addEventListener("keydown", openRow);
   window.addEventListener("hashchange", route);
   window.addEventListener("resize", () => { if (report && !$("page-overview").hidden) drawLineup(); });
   try {
