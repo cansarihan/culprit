@@ -1,1 +1,109 @@
-<!doctype html><title>culprit</title>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Culprit</title>
+  <link rel="icon" href="favicon.svg">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <aside class="spine">
+    <a class="mark" href="#/overview" aria-label="Culprit overview">
+      <svg viewBox="0 0 64 64" width="34" height="34" aria-hidden="true"><path d="M10 34h44" stroke="#5B6678" stroke-width="3" stroke-linecap="round"/><circle cx="18" cy="34" r="5" fill="#E8ECF1"/><circle cx="46" cy="34" r="5" fill="#E8ECF1"/><circle cx="32" cy="34" r="9" fill="#F5D547"/><circle cx="32" cy="34" r="4.5" fill="#B3263E"/></svg>
+      <span>Culprit</span>
+    </a>
+    <p class="case" id="case">Opening the case file</p>
+    <nav aria-label="Sections">
+      <a href="#/overview" data-page="overview"><svg viewBox="0 0 20 20"><path d="M3 10h14M6 10a1 1 0 1 1-2 0 1 1 0 0 1 2 0Zm5 0a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Zm5 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"/></svg>Overview</a>
+      <a href="#/commits" data-page="commits"><svg viewBox="0 0 20 20"><path d="M4 5h12M4 10h12M4 15h8"/></svg>Commits</a>
+      <a href="#/timeline" data-page="timeline"><svg viewBox="0 0 20 20"><path d="M4 16V9M8 16V5M12 16v-4M16 16V7"/></svg>Timeline</a>
+      <a href="#/hotspots" data-page="hotspots"><svg viewBox="0 0 20 20"><path d="M10 3c3 3 4 5 4 7a4 4 0 0 1-8 0c0-1 .4-2 1-3 .3 1 1 1.6 1.5 1.6C8.5 6 9 4.5 10 3Z"/></svg>Hotspots</a>
+      <a href="#/signals" data-page="signals"><svg viewBox="0 0 20 20"><path d="M3 15l4-5 3 3 4-7 3 4"/></svg>Signals</a>
+      <a href="#/about" data-page="about"><svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="7"/><path d="M10 9v5M10 6.5v.01"/></svg>About</a>
+    </nav>
+    <button class="rescan" id="rescan" type="button">Rescan history</button>
+    <p class="build" id="build"></p>
+  </aside>
+
+  <main id="main" tabindex="-1">
+    <section class="page" id="page-overview" aria-labelledby="h-overview">
+      <header class="lede">
+        <h1 id="h-overview">Reading the history</h1>
+        <p id="lede-sub" class="sub">Scanning every commit for fixes nobody announced.</p>
+      </header>
+      <figure class="lineup">
+        <svg id="lineup" role="img" aria-label="Every commit in order, suspects marked"></svg>
+        <figcaption><span class="key k-silent"></span>Silent fix <span class="key k-ann"></span>Announced fix <span class="key k-plain"></span>Ordinary commit</figcaption>
+      </figure>
+      <div class="overview-grid">
+        <section class="panel suspects">
+          <h2>Prime suspects</h2>
+          <ol id="suspects"></ol>
+        </section>
+        <section class="panel">
+          <h2>Verdicts</h2>
+          <div class="donut-wrap"><svg id="donut" viewBox="0 0 120 120" role="img"></svg><ul id="donut-legend"></ul></div>
+        </section>
+        <section class="panel">
+          <h2>Where fixes land</h2>
+          <ul id="mini-hot" class="hbars"></ul>
+        </section>
+      </div>
+    </section>
+
+    <section class="page" id="page-commits" aria-labelledby="h-commits" hidden>
+      <header class="lede"><h1 id="h-commits">Every commit, ranked</h1></header>
+      <div class="filters">
+        <input id="q" type="search" placeholder="Search subjects, authors or hashes" aria-label="Search commits">
+        <div class="seg" role="group" aria-label="Band">
+          <button data-band="flagged" class="on">Flagged</button><button data-band="all">All</button><button data-band="silent">Silent only</button>
+        </div>
+      </div>
+      <table class="ledger">
+        <thead><tr><th scope="col">Score</th><th scope="col">Commit</th><th scope="col">Evidence</th><th scope="col">Author</th><th scope="col">Date</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </section>
+
+    <section class="page" id="page-commit" aria-labelledby="h-commit" hidden>
+      <a class="back" href="#/commits">Back to commits</a>
+      <header class="case-head">
+        <div><p class="hash" id="c-hash"></p><h1 id="h-commit"></h1><p class="sub" id="c-meta"></p></div>
+        <svg id="dial" viewBox="0 0 140 140" role="img"></svg>
+      </header>
+      <section class="panel"><h2>Evidence</h2><ul id="evidence" class="evidence"></ul></section>
+      <section id="diffs"></section>
+    </section>
+
+    <section class="page" id="page-timeline" aria-labelledby="h-timeline" hidden>
+      <header class="lede"><h1 id="h-timeline">When the fixes happened</h1><p class="sub">Each column is a week. Red marks a week with a silent fix.</p></header>
+      <section class="panel"><svg id="weeks" role="img" aria-label="Commits per week"></svg></section>
+      <section class="panel"><h2>Weeks with silent fixes</h2><ol id="week-list" class="week-list"></ol></section>
+    </section>
+
+    <section class="page" id="page-hotspots" aria-labelledby="h-hotspots" hidden>
+      <header class="lede"><h1 id="h-hotspots">Files that keep getting fixed</h1><p class="sub">A file patched quietly more than once is where the next bug is likely to be.</p></header>
+      <div class="two">
+        <section class="panel"><h2>Files</h2><ul id="hot" class="hbars wide"></ul></section>
+        <section class="panel"><h2>People</h2><table class="ledger slim"><thead><tr><th scope="col">Author</th><th scope="col">Commits</th><th scope="col">Flagged</th></tr></thead><tbody id="authors"></tbody></table></section>
+      </div>
+    </section>
+
+    <section class="page" id="page-signals" aria-labelledby="h-signals" hidden>
+      <header class="lede"><h1 id="h-signals">What counts as evidence</h1><p class="sub">Each signal adds its weight to a commit's score. Fifty or more is a likely fix.</p></header>
+      <div id="families" class="families"></div>
+    </section>
+
+    <section class="page" id="page-about" aria-labelledby="h-about" hidden>
+      <header class="lede"><h1 id="h-about">About Culprit</h1></header>
+      <div class="prose panel">
+        <p>Projects fix security bugs all the time without saying so. The commit reads "tidy frame reader" or "small fix", and the vulnerability it closes was live in every release before it.</p>
+        <p>Culprit reads a repository's history and scores each commit on three kinds of evidence: what the message says, what the diff adds, and which files it touches. A commit that adds a bounds check to a parser, swaps a token comparison for a constant-time one, or starts cleaning file paths scores high. If it never mentions a CVE or the word security, it is marked as a silent fix.</p>
+        <p>The scores are a reading order, not a verdict. Start at the top of the list and read the diffs.</p>
+      </div>
+    </section>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>
