@@ -17,7 +17,8 @@ const el = (tag, attrs = {}) => {
   return n;
 };
 const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
-const day = (iso) => new Date(iso).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+const LOCALE = "en-US";
+const day = (iso) => new Date(iso).toLocaleDateString(LOCALE, { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" });
 const plural = (n, one, many) => n + " " + (n === 1 ? one : many);
 const kind = (a) => (a.band === "unlikely" ? "" : a.silent ? "silent" : "announced");
 const COLORS = { likely: "#b3263e", possible: "#c98a1b", unlikely: "#b8c2cf" };
@@ -102,7 +103,7 @@ function drawLineup() {
     const tx = pad + ((d.getTime() - t0) / Math.max(1, t1 - t0)) * (W - pad * 2);
     svg.append(el("line", { x1: tx, x2: tx, y1: mid + 8, y2: mid + 14, stroke: "#4a5668" }));
     const label = el("text", { x: tx, y: H - 8, "text-anchor": "middle", fill: "#7d8999", "font-size": 11 });
-    label.textContent = d.toLocaleDateString(undefined, { month: "short" });
+    label.textContent = d.toLocaleDateString(LOCALE, { month: "short", timeZone: "UTC" });
     svg.append(label);
   }
 
@@ -305,7 +306,7 @@ function renderTimeline() {
     const hit = el("rect", { x: cx - step / 2, y: top, width: step, height: H - bottom - top, fill: "transparent" });
     hit.append(tip); svg.append(hit);
     if (w.silent) svg.append(el("circle", { cx, cy: y(w.commits) - 10, r: 4.5, fill: "#b3263e", stroke: "#f5d547", "stroke-width": 2 }));
-    const month = new Date(w.start).toLocaleDateString(undefined, { month: "short", timeZone: "UTC" });
+    const month = new Date(w.start).toLocaleDateString(LOCALE, { month: "short", timeZone: "UTC" });
     if (month !== lastMonth) {
       const t = el("text", { x: cx, y: H - 10, "text-anchor": "middle", "font-size": 11, fill: "#5b6678" });
       t.textContent = month; svg.append(t); lastMonth = month;

@@ -51,6 +51,8 @@ nav a.on svg { stroke: var(--evidence); }
 
 /* pages */
 main { padding: 40px 48px 64px; max-width: 1240px; width: 100%; outline: none; }
+main:focus, main:focus-visible { outline: none; }
+.page > .panel + .panel { margin-top: 18px; }
 .lede { margin-bottom: 26px; }
 h1 { font: 600 40px/1.12 var(--serif); letter-spacing: -.01em; margin: 0 0 8px; max-width: 22ch; }
 .lede h1 { max-width: 26ch; }
@@ -120,6 +122,8 @@ input[type=search] {
 .meter.likely b { background: var(--evidence); }
 .meter.possible b { background: #c98a1b; }
 .hashcell { font-family: var(--mono); font-size: 12.5px; color: var(--graphite); }
+.ledger td:nth-child(4), .ledger td:nth-child(5) { white-space: nowrap; color: var(--ink-2); }
+.ledger td:nth-child(1) { white-space: nowrap; }
 .subj { font-weight: 600; }
 .ev { display: flex; flex-wrap: wrap; gap: 5px; }
 .ev span { font-size: 12px; padding: 2px 8px; border-radius: 6px; background: var(--paper); color: var(--ink-2); }
