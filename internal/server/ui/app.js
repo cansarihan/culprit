@@ -201,7 +201,72 @@ function renderCommits() {
       <td>${day(a.commit.when)}</td>
     </tr>`).join("") : `<tr><td colspan="5" class="empty">${filter.q ? "No commit matches that search." : "No commit fits this filter. Try All."}</td></tr>`;
 }
-function renderCommit() {}
+async function renderCommit(hash) {
+  $("h-commit").textContent = "Opening commit";
+  $("c-hash").textContent = hash || "";
+  $("c-meta").textContent = "";
+  $("evidence").innerHTML = "";
+  $("diffs").innerHTML = "";
+  $("dial").replaceChildren();
+  let detail;
+  try {
+    detail = await api("/api/v1/commits/" + encodeURIComponent(hash || ""));
+  } catch (err) {
+    $("h-commit").textContent = "This commit is not in the repository";
+    $("c-meta").textContent = err.message + ". Pick one from the commit list.";
+    return;
+  }
+  const a = detail.assessment;
+  $("c-hash").textContent = a.commit.hash;
+  $("h-commit").textContent = a.commit.subject;
+  const k = kind(a);
+  $("c-meta").textContent = `${a.commit.author} committed this on ${day(a.commit.when)}, touching ` +
+    `${plural(a.files, "file", "files")} and ${plural(a.churn, "line", "lines")}.` +
+    (k === "silent" ? " It fixes something and never says so." : k === "announced" ? " The fix was announced." : "");
+  drawDial(a);
+  $("evidence").innerHTML = a.hits.length ? a.hits.map((h) => `
+    <li><span class="w">+${h.signal.weight}</span><span class="fam">${esc(h.signal.family)} signal</span>
+      <span><span class="what">${esc(h.signal.label)}</span><code>${esc(h.evidence)}</code></span></li>`).join("") +
+    (a.targeted ? `<li><span class="w">+8</span><span class="fam">size</span><span><span class="what">Small, targeted change</span><code>${a.churn} lines</code></span></li>` : "")
+    : `<li class="empty">No security signals in this commit.</li>`;
+  renderDiffs(detail.files, a.hits);
+}
+
+function drawDial(a) {
+  const svg = $("dial");
+  const R = 56, C = 2 * Math.PI * R, arc = C * 0.75;
+  svg.append(el("circle", { cx: 70, cy: 70, r: R, fill: "none", stroke: "#dfe5ec", "stroke-width": 12,
+    "stroke-dasharray": `${arc} ${C}`, transform: "rotate(135 70 70)", "stroke-linecap": "round" }));
+  const fill = el("circle", { cx: 70, cy: 70, r: R, fill: "none", stroke: COLORS[a.band], "stroke-width": 12,
+    "stroke-dasharray": `${reduced ? arc * a.score / 100 : 0} ${C}`, transform: "rotate(135 70 70)", "stroke-linecap": "round" });
+  fill.style.transition = "stroke-dasharray .7s ease-out";
+  svg.append(fill);
+  if (!reduced) requestAnimationFrame(() => requestAnimationFrame(() => fill.setAttribute("stroke-dasharray", `${arc * a.score / 100} ${C}`)));
+  const n = el("text", { x: 70, y: 76, "text-anchor": "middle", "font-size": 36, "font-weight": 700, "font-family": "Charter, Georgia, serif", fill: "#1b2433" });
+  n.textContent = a.score;
+  const b = el("text", { x: 70, y: 98, "text-anchor": "middle", "font-size": 13, fill: "#5b6678" });
+  b.textContent = a.band;
+  svg.append(n, b);
+  svg.setAttribute("aria-label", `Score ${a.score} of 100, ${a.band}`);
+}
+
+function renderDiffs(files, hits) {
+  const evidence = hits.filter((h) => h.signal.family === "diff")
+    .flatMap((h) => h.evidence.split("  →  ").map((e) => ({ text: e.trim(), file: h.file })));
+  $("diffs").innerHTML = files.map((f) => {
+    const marks = evidence.filter((e) => e.file === f.path).map((e) => e.text);
+    const line = (cls, text) => {
+      const t = text.trim();
+      const hit = t && marks.includes(t);
+      const body = hit ? esc(text.slice(0, text.indexOf(t))) + "<mark>" + esc(t) + "</mark>" : esc(text);
+      return `<div class="${cls}">${body || " "}</div>`;
+    };
+    const note = f.new ? "created in this commit" : `${f.added.length} added, ${f.removed.length} removed`;
+    return `<article class="file"><h3>${esc(f.path)}<small>${note}</small></h3><div class="diff">` +
+      f.removed.map((l) => line("del", l)).join("") + f.added.map((l) => line("add", l)).join("") +
+      `</div></article>`;
+  }).join("");
+}
 function renderTimeline() {}
 function renderHotspots() {}
 function renderSignals() {}
